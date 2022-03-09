@@ -41,10 +41,10 @@ public class EmployeeEntity {
 
     @ManyToOne
     @JoinColumn(name = "employer_id")
-    private EmployeeEntity employer;
+    private CompanyEntity employer;
 
     public EmployeeEntity(String name, String lastname, String cpf, AddressEntity address, String phoneContact, Gender gender, LocalDate birthday,
-                          LocalDate hiredate, EmployeeEntity employer) {
+                          LocalDate hiredate, CompanyEntity employer) {
         this.name = name;
         this.lastname = lastname;
         this.cpf = cpf;

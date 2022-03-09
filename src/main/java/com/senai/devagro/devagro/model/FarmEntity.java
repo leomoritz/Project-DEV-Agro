@@ -26,7 +26,7 @@ public class FarmEntity {
 
     @OneToOne
     @JoinColumn(name = "company_id")
-    private EmployeeEntity company;
+    private CompanyEntity company;
 
     @OneToOne
     @JoinColumn(name = "grain_produced_id")
@@ -38,7 +38,7 @@ public class FarmEntity {
     @Column(name = "last_harvest")
     private LocalDate lastHarvest;
 
-    public FarmEntity(String name, AddressEntity address, EmployeeEntity company, GrainEntity grainProduced, Double initialInventoryKg, LocalDate lastHarvest) {
+    public FarmEntity(String name, AddressEntity address, CompanyEntity company, GrainEntity grainProduced, Double initialInventoryKg, LocalDate lastHarvest) {
         this.name = name;
         this.address = address;
         this.company = company;
