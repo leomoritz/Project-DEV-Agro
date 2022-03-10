@@ -49,6 +49,27 @@ public class CompanyService {
     }
 
     /**
+     * Busca uma empresa no banco de dados com base no ID informado.
+     *
+     * @param id
+     * @return o entity da empresa que foi encontrada pelo ID.
+     */
+    public CompanyEntity getCompanyEntityById(Long id) {
+        if (id == null) {
+            throw new EntityNullException("Company ID cannot be empty or null.");
+        }
+
+        Optional<CompanyEntity> company = repository.findById(id);
+
+        if (company.isEmpty()) {
+            throw new EntityNotFoundException("Company with id " + id + " does not exists!");
+        }
+
+        return company.get();
+
+    }
+
+    /**
      * Cadastra uma empresa no banco de dados.
      *
      * @param entity

@@ -2,9 +2,11 @@ package com.senai.devagro.devagro.service;
 
 import com.senai.devagro.devagro.dto.EmployeeDTO;
 import com.senai.devagro.devagro.model.EmployeeEntity;
+import com.senai.devagro.devagro.model.enums.Gender;
 import com.senai.devagro.devagro.repository.EmployeeRepository;
 import com.senai.devagro.devagro.service.exceptions.EntityNotFoundException;
 import com.senai.devagro.devagro.service.exceptions.EntityNullException;
+import com.senai.devagro.devagro.service.exceptions.GenderEnumException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -59,6 +61,10 @@ public class EmployeeService {
             throw new EntityNullException("Employee cannot be empty or null.");
         }
 
+        if(entity.getGender() == Gender.UNKNOW){
+            throw new GenderEnumException();
+        }
+
         EmployeeEntity employee = repository.save(entity);
 
         return new EmployeeDTO(employee);
@@ -79,6 +85,10 @@ public class EmployeeService {
 
         if (employee.isEmpty()) {
             throw new EntityNotFoundException("Employee with id " + id + " does not exists!");
+        }
+
+        if(newEmployee.getGender() == Gender.UNKNOW){
+            throw new GenderEnumException();
         }
 
         employee.get().setName(newEmployee.getName());

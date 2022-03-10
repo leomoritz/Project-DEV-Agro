@@ -49,6 +49,27 @@ public class GrainService {
     }
 
     /**
+     * Busca um grão no banco de dados com base no ID informado.
+     *
+     * @param id
+     * @return a entidade do grão que foi encontrado pelo ID.
+     */
+    public GrainEntity getGrainEntityById(Long id) {
+        if (id == null) {
+            throw new EntityNullException("Id cannot be empty or null!");
+        }
+
+        Optional<GrainEntity> grain = repository.findById(id);
+
+        if (grain.isEmpty()) {
+            throw new EntityNotFoundException("Grain with id " + id + " does not exists!");
+        }
+
+        return grain.get();
+
+    }
+
+    /**
      * Cadastra um grão no banco de dados com base nos dados informados.
      *
      * @param entity

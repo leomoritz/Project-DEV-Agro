@@ -29,6 +29,7 @@ public class AddressService {
 
     /**
      * Busca um determinado endereço do repositório com base no ID e converte para AddressDTO.
+     *
      * @param id
      * @return uma endereço convertido para DTO
      */
@@ -48,12 +49,33 @@ public class AddressService {
     }
 
     /**
+     * Busca um determinado endereço do repositório com base no ID.
+     *
+     * @param id
+     * @return uma endereço entity.
+     */
+    public AddressEntity getAddressEntityById(Long id) {
+        if (id == null) {
+            throw new EntityNullException("Id cannot be empty or null");
+        }
+
+        Optional<AddressEntity> address = repository.findById(id);
+
+        if (address.isEmpty()) {
+            throw new EntityNotFoundException("Address with id " + id + " does not exists!");
+        }
+
+        return address.get();
+    }
+
+    /**
      * Cadastra um endereço no banco de dados.
+     *
      * @param entity
      * @return uma endereço convertido para DTO
      */
     public AddressDTO createAddress(AddressEntity entity) {
-        if(entity == null){
+        if (entity == null) {
             throw new EntityNullException("Address cannot be empty or null");
         }
 
@@ -65,10 +87,11 @@ public class AddressService {
 
     /**
      * Atualiza um endereço no banco de dados com base no ID do endereço e os dados do novo endereço
+     *
      * @param id, newEntity
      * @return o id do endereço atualizado
      */
-    public Long updateAddressById(Long id, AddressEntity newEntity){
+    public Long updateAddressById(Long id, AddressEntity newEntity) {
         if (id == null || newEntity == null) {
             throw new EntityNullException("Id / Address cannot be empty or null");
         }
@@ -94,10 +117,11 @@ public class AddressService {
 
     /**
      * Deleta um endereço no banco de dados com base no ID do endereço
+     *
      * @param id
      * @return o id do endereço que foi deletado
      */
-    public Long deleteAddressById(Long id){
+    public Long deleteAddressById(Long id) {
         if (id == null) {
             throw new EntityNullException("Id cannot be empty or null");
         }
