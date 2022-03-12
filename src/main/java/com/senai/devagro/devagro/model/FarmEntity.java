@@ -3,6 +3,7 @@ package com.senai.devagro.devagro.model;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import java.time.LocalDate;
@@ -18,6 +19,7 @@ public class FarmEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String name;
 
     @OneToOne
@@ -32,10 +34,11 @@ public class FarmEntity {
     @JoinColumn(name = "grain_produced_id")
     private GrainEntity grainProduced;
 
-    @Column(name = "initial_inventory_kg")
+    @Column(name = "initial_inventory_kg", nullable = false)
     private Double initialInventoryKg;
 
     @Column(name = "last_harvest")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate lastHarvest;
 
     public FarmEntity(String name, AddressEntity address, CompanyEntity company, GrainEntity grainProduced, Double initialInventoryKg, LocalDate lastHarvest) {

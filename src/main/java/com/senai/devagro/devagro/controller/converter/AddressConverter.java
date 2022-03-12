@@ -29,10 +29,11 @@ public class AddressConverter {
     private String city;
 
     @NotBlank(message = "State is required.")
+    @Size(message = "State violates lenght constraint. Enter the state abbreviation in XX format", min = 2, max = 2)
     private String state;
 
     @NotBlank(message = "Postal-code is required.")
-    @Size(message = "Postal-code violates minLength constraint of 8", min = 8, max = 8)
+    @Size(message = "Postal-code violates lenght constraint (min = 8 / max = 9)", min = 8, max = 9)
     private String postalcode;
 
     public AddressEntity converter(){

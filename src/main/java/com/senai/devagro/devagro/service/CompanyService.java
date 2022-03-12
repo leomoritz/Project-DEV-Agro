@@ -1,14 +1,17 @@
 package com.senai.devagro.devagro.service;
 
 import com.senai.devagro.devagro.dto.CompanyDTO;
+import com.senai.devagro.devagro.model.AddressEntity;
 import com.senai.devagro.devagro.model.CompanyEntity;
 import com.senai.devagro.devagro.repository.CompanyRepository;
+import com.senai.devagro.devagro.service.exceptions.EntityAlreadyExistsException;
 import com.senai.devagro.devagro.service.exceptions.EntityNotFoundException;
 import com.senai.devagro.devagro.service.exceptions.EntityNullException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -17,6 +20,9 @@ public class CompanyService {
 
     @Autowired
     private CompanyRepository repository;
+
+    @Autowired
+    private AddressService addressService;
 
     /**
      * Busca todas as empresas cadastradas no banco de dados e converte para dto (CompanyDTO::new).
@@ -80,6 +86,19 @@ public class CompanyService {
             throw new EntityNullException("Company cannot be empty or null.");
         }
 
+        if (repository.existsByCnpj(entity.getCnpj())) {
+            throw new EntityAlreadyExistsException("Company with cnpj " + entity.getCnpj() + " already exists.");
+        }
+
+        Optional<AddressEntity> address =
+                addressService.getAddressEntityByPostalcodeAndNumber(entity.getAddress().getPostalcode(), entity.getAddress().getNumber());
+
+        if (address.isPresent()) {
+            entity.setAddress(address.get());
+        } else {
+            addressService.createAddress(entity.getAddress());
+        }
+
         CompanyEntity company = repository.save(entity);
 
         return new CompanyDTO(company);
@@ -103,11 +122,21 @@ public class CompanyService {
             throw new EntityNotFoundException("Company with id " + id + " does not exists!");
         }
 
-        company.get().setName(newCompany.getName());
-        company.get().setCnpj(newCompany.getCnpj());
-        company.get().setAddress(newCompany.getAddress());
+        if (!Objects.equals(newCompany.getCnpj(), company.get().getCnpj())) {
+            if (repository.existsByCnpj(newCompany.getCnpj())) {
+                throw new EntityAlreadyExistsException("Company with cnpj " + newCompany.getCnpj() + " already exists.");
+            }
+        }
 
-        createCompany(company.get());
+        Long addressId = addressService.updateAddressById(company.get().getAddress().getId(), newCompany.getAddress());
+        AddressEntity address = addressService.getAddressEntityById(addressId);
+
+        if (address != null) {
+            company.get().setName(newCompany.getName());
+            company.get().setCnpj(newCompany.getCnpj());
+            company.get().setAddress(address);
+            repository.save(company.get());
+        }
 
         return id;
 

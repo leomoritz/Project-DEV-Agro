@@ -1,4 +1,4 @@
-package com.senai.devagro.devagro.main;
+package com.senai.devagro.devagro;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

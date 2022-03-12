@@ -26,10 +26,7 @@ public class GrainConverter {
     @NotNull(message = "Average harvest time is required.")
     private Integer averageHarvestTime;
 
-    @Autowired
-    private CompanyService companyService;
-
-    public GrainEntity converter() {
+    public GrainEntity converter(CompanyService companyService) {
         GrainEntity entity = new GrainEntity();
 
         entity.setName(name);

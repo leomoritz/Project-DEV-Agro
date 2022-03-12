@@ -17,9 +17,11 @@ public class GrainEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String name;
 
-    @ManyToMany(mappedBy = "grains")
+    @ManyToOne
+    @JoinColumn(name = "grain_id")
     private CompanyEntity company;
 
     @Column(name = "average_harvest_time")

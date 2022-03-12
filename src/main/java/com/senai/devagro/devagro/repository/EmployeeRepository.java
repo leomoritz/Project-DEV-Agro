@@ -9,16 +9,18 @@ import java.util.List;
 @Repository
 public interface EmployeeRepository extends JpaRepository<EmployeeEntity, Long> {
 
+    boolean existsByCpf(String cpf);
+
     /**
      * @param companyId
      * @return retorna a lista de colaboradores de uma empresa
      */
-    public List<EmployeeEntity> findAllEmployeesByCompany(Long companyId);
+    public List<EmployeeEntity> findAllByEmployer(Long companyId);
 
     /**
      * @param companyId
      * @return retorna a quantidade de colaboradores de uma empresa.
      */
-    public Long countEmployeesByCompany(Long companyId);
+    public Long countByEmployer(Long companyId);
 
 }

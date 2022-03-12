@@ -3,6 +3,7 @@ package com.senai.devagro.devagro.service;
 import com.senai.devagro.devagro.dto.AddressDTO;
 import com.senai.devagro.devagro.model.AddressEntity;
 import com.senai.devagro.devagro.repository.AddressRepository;
+import com.senai.devagro.devagro.service.exceptions.EntityAlreadyExistsException;
 import com.senai.devagro.devagro.service.exceptions.EntityNotFoundException;
 import com.senai.devagro.devagro.service.exceptions.EntityNullException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +67,24 @@ public class AddressService {
         }
 
         return address.get();
+    }
+
+    /**
+     * Busca um determinado endereço do repositório com base no cep e número.
+     *
+     * @param postalcode, number
+     * @return uma endereço entity.
+     */
+
+    public Optional<AddressEntity> getAddressEntityByPostalcodeAndNumber(String postalcode, Integer number) {
+        if (postalcode == null || number == null) {
+            throw new EntityNullException("Postalcode or number cannot be empty or null");
+        }
+
+        Optional<AddressEntity> address = repository.findByPostalcodeAndNumber(postalcode, number);
+
+        return address;
+
     }
 
     /**

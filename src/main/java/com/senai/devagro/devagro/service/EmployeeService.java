@@ -20,6 +20,12 @@ public class EmployeeService {
     @Autowired
     private EmployeeRepository repository;
 
+    @Autowired
+    private AddressService addressService;
+
+    @Autowired
+    private CompanyService companyService;
+
     /**
      * Busca todos os funcionários cadastrados no banco de dados e converte para dto (EmployeeDTO::new).
      *
@@ -65,6 +71,8 @@ public class EmployeeService {
             throw new GenderEnumException();
         }
 
+        companyService.createCompany(entity.getEmployer());
+        addressService.createAddress(entity.getAddress());
         EmployeeEntity employee = repository.save(entity);
 
         return new EmployeeDTO(employee);

@@ -13,6 +13,6 @@ public interface GrainRepository extends JpaRepository<GrainEntity, Long> {
      * @param companyId
      * @return retorna a lista de grãos de uma empresa
      */
-    public List<GrainEntity> findAllGrainsByCompany(Long companyId);
+    public List<GrainEntity> findAllByCompany(Long companyId);
 
 }

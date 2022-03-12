@@ -4,6 +4,7 @@ import com.senai.devagro.devagro.model.enums.Gender;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import java.time.LocalDate;
@@ -19,10 +20,13 @@ public class EmployeeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
     private String lastname;
 
+    @Column(nullable = false)
     private String cpf;
 
     @OneToOne
@@ -35,8 +39,11 @@ public class EmployeeEntity {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate birthday;
 
+    @Column(nullable = false)
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate hiredate;
 
     @ManyToOne

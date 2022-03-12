@@ -1,7 +1,6 @@
 package com.senai.devagro.devagro.model;
 
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
@@ -18,8 +17,10 @@ public class CompanyEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
     private String cnpj;
 
     @OneToOne
@@ -32,12 +33,7 @@ public class CompanyEntity {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "employer")
     private final List<EmployeeEntity> employees;
 
-    @ManyToMany
-    @JoinTable(
-            name = "company_grain",
-            joinColumns = @JoinColumn(name = "company_id"),
-            inverseJoinColumns = @JoinColumn(name = "grain_id")
-    )
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "company")
     private final List<GrainEntity> grains;
 
     public CompanyEntity() {
