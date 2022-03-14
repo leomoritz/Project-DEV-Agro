@@ -1,9 +1,7 @@
 package com.senai.devagro.devagro.controller;
 
 import com.senai.devagro.devagro.controller.converter.FarmConverter;
-import com.senai.devagro.devagro.dto.FarmDTO;
-import com.senai.devagro.devagro.dto.FarmsByCompanyDTO;
-import com.senai.devagro.devagro.dto.StandardMessageDTO;
+import com.senai.devagro.devagro.dto.*;
 import com.senai.devagro.devagro.service.FarmService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -73,6 +71,20 @@ public class FarmController {
         Long idDeleted = farmService.deleteFarmById(id);
         StandardMessageDTO standardMessageDTO = new StandardMessageDTO("Farm with ID " + idDeleted + " successfully deleted!");
         return ResponseEntity.ok().body(standardMessageDTO);
+    }
+
+    //OTHERS
+
+    @PutMapping("/registerHarvest/{id}")
+    public ResponseEntity<FarmHarvestDTO> registerHarvestByFarmId(@PathVariable Long id, @RequestBody Double quantityKgHarvested){
+        FarmHarvestDTO farmHarvestDto = farmService.registerHarvestByFarmId(id, quantityKgHarvested);
+        return ResponseEntity.ok().body(farmHarvestDto);
+    }
+
+    @PutMapping("/withdrawalGrain/{id}")
+    public ResponseEntity<FarmWithdrawalGrainDTO> withdrawalGrainByFarmId(@PathVariable Long id, @RequestBody Double quantityKgWithdrawal){
+        FarmWithdrawalGrainDTO farmWithdrawalGrainDto = farmService.withdrawalGrainByFarmId(id, quantityKgWithdrawal);
+        return ResponseEntity.ok().body(farmWithdrawalGrainDto);
     }
 
 }

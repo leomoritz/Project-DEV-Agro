@@ -1,12 +1,12 @@
 package com.senai.devagro.devagro.service;
 
 import com.senai.devagro.devagro.dto.FarmDTO;
+import com.senai.devagro.devagro.dto.FarmHarvestDTO;
+import com.senai.devagro.devagro.dto.FarmWithdrawalGrainDTO;
 import com.senai.devagro.devagro.dto.FarmsByCompanyDTO;
 import com.senai.devagro.devagro.model.FarmEntity;
 import com.senai.devagro.devagro.repository.FarmRepository;
-import com.senai.devagro.devagro.service.exceptions.EntityAlreadyExistsException;
-import com.senai.devagro.devagro.service.exceptions.EntityNotFoundException;
-import com.senai.devagro.devagro.service.exceptions.EntityNullException;
+import com.senai.devagro.devagro.service.exceptions.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -57,6 +57,26 @@ public class FarmService {
         }
 
         return new FarmDTO(farm.get());
+
+    }
+
+    /**
+     * Busca uma fazenda no banco de dados através do ID.
+     *
+     * @return a entidade da fazenda que foi encontrada pelo ID.
+     */
+    public FarmEntity findFarmEntityById(Long id) {
+        if (id == null) {
+            throw new EntityNullException("Id cannot be empty or null!");
+        }
+
+        Optional<FarmEntity> farm = repository.findById(id);
+
+        if (farm.isEmpty()) {
+            throw new EntityNotFoundException("Farm with id " + id + " does not exists!");
+        }
+
+        return farm.get();
 
     }
 
@@ -214,6 +234,77 @@ public class FarmService {
         Integer averageHarvestTime = farm.getGrainProduced().getAverageHarvestTime();
 
         return lastHarvest.plusDays(averageHarvestTime);
+
+    }
+
+    /**
+     * Registra uma colheita em uma fazenda, que aumenta o estoque de grãos daquela fazenda.
+     *
+     * @param id
+     * @param quantityKgHarvested
+     * @return um DTO com o nome da fazenda e do grão, bem como a data da colheita, a quantidade colhida de grãos e a quantidade do estoque após a colheita.
+     */
+
+    public FarmHarvestDTO registerHarvestByFarmId(Long id, Double quantityKgHarvested) {
+
+        FarmEntity farm = findFarmEntityById(id);
+
+        if(farm == null){
+            throw new EntityNullException("The farm cannot be empty or null.");
+        }
+
+        try {
+            consistQuantityKg(farm, quantityKgHarvested);
+        } catch (Exception e) {
+            e.getStackTrace();
+        }
+
+        LocalDate harvestDate = LocalDate.now();
+        Double currentQuantityStock = farm.getInitialInventoryKg();
+        currentQuantityStock += quantityKgHarvested;
+        farm.setInitialInventoryKg(currentQuantityStock);
+
+        return new FarmHarvestDTO(farm, quantityKgHarvested, harvestDate);
+    }
+
+    public FarmWithdrawalGrainDTO withdrawalGrainByFarmId(Long id, Double quantityKgWithdrawal){
+
+        FarmEntity farm = findFarmEntityById(id);
+
+        if(farm == null){
+            throw new EntityNullException("The farm cannot be empty or null.");
+        }
+
+        if(quantityKgWithdrawal > farm.getInitialInventoryKg()){
+            throw new InsufficientGrainStockException();
+        }
+
+        try {
+            consistQuantityKg(farm, quantityKgWithdrawal);
+        } catch (Exception e) {
+            e.getStackTrace();
+        }
+
+        LocalDate withdrawalDate = LocalDate.now();
+        Double currentQuantityStock = farm.getInitialInventoryKg();
+        currentQuantityStock -= quantityKgWithdrawal;
+        farm.setInitialInventoryKg(currentQuantityStock);
+
+        return new FarmWithdrawalGrainDTO(farm, quantityKgWithdrawal, withdrawalDate);
+
+    }
+
+
+    private boolean consistQuantityKg(FarmEntity farm, Double quantityKg) {
+        if (quantityKg == null) {
+            throw new EntityNullException("The quantity cannot be empty or null.");
+        }
+
+        if (quantityKg <= 0) {
+            throw new InvalidQuantityException("The quantity cannot be less than or equal to zero.");
+        }
+
+        return true;
 
     }
 
