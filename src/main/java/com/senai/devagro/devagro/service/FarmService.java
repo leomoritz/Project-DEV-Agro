@@ -245,7 +245,7 @@ public class FarmService {
      * @return um DTO com o nome da fazenda e do grão, bem como a data da colheita, a quantidade colhida de grãos e a quantidade do estoque após a colheita.
      */
 
-    public FarmHarvestDTO registerHarvestByFarmId(Long id, Double quantityKgHarvested) {
+    public FarmHarvestDTO registerHarvestByFarmId(Long id, Double quantityKgHarvested, LocalDate harvestDate) {
 
         FarmEntity farm = findFarmEntityById(id);
 
@@ -259,15 +259,16 @@ public class FarmService {
             e.getStackTrace();
         }
 
-        LocalDate harvestDate = LocalDate.now();
         Double currentQuantityStock = farm.getInitialInventoryKg();
         currentQuantityStock += quantityKgHarvested;
         farm.setInitialInventoryKg(currentQuantityStock);
 
+        repository.save(farm);
+
         return new FarmHarvestDTO(farm, quantityKgHarvested, harvestDate);
     }
 
-    public FarmWithdrawalGrainDTO withdrawalGrainByFarmId(Long id, Double quantityKgWithdrawal){
+    public FarmWithdrawalGrainDTO withdrawalGrainByFarmId(Long id, Double quantityKgWithdrawal, LocalDate withdrawalDate){
 
         FarmEntity farm = findFarmEntityById(id);
 
@@ -285,10 +286,11 @@ public class FarmService {
             e.getStackTrace();
         }
 
-        LocalDate withdrawalDate = LocalDate.now();
         Double currentQuantityStock = farm.getInitialInventoryKg();
         currentQuantityStock -= quantityKgWithdrawal;
         farm.setInitialInventoryKg(currentQuantityStock);
+
+        repository.save(farm);
 
         return new FarmWithdrawalGrainDTO(farm, quantityKgWithdrawal, withdrawalDate);
 
