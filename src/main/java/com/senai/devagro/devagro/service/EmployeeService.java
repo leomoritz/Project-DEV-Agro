@@ -4,13 +4,15 @@ import com.senai.devagro.devagro.dto.EmployeeDTO;
 import com.senai.devagro.devagro.model.EmployeeEntity;
 import com.senai.devagro.devagro.model.enums.Gender;
 import com.senai.devagro.devagro.repository.EmployeeRepository;
+import com.senai.devagro.devagro.service.exceptions.EntityAlreadyExistsException;
 import com.senai.devagro.devagro.service.exceptions.EntityNotFoundException;
 import com.senai.devagro.devagro.service.exceptions.EntityNullException;
-import com.senai.devagro.devagro.service.exceptions.GenderEnumException;
+import com.senai.devagro.devagro.service.exceptions.InvalidEnumException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -67,12 +69,17 @@ public class EmployeeService {
             throw new EntityNullException("Employee cannot be empty or null.");
         }
 
-        if(entity.getGender() == Gender.UNKNOW){
-            throw new GenderEnumException();
+        if (entity.getGender() == Gender.UNKNOW) {
+            throw new InvalidEnumException("Gender does not exists. Enter Male or Female.");
         }
 
-        companyService.createCompany(entity.getEmployer());
-        addressService.createAddress(entity.getAddress());
+        if (repository.existsByCpf(entity.getCpf())) {
+            throw new EntityAlreadyExistsException("Employee with cpf " + entity.getCpf() + " already exists.");
+        }
+
+        addressService.createOrUpdateAddress(entity.getAddress()).ifPresent(entity::setAddress);
+        companyService.getCompanyIfAlreadyExists(entity.getEmployer()).ifPresent(entity::setEmployer);
+
         EmployeeEntity employee = repository.save(entity);
 
         return new EmployeeDTO(employee);
@@ -92,24 +99,33 @@ public class EmployeeService {
         Optional<EmployeeEntity> employee = repository.findById(id);
 
         if (employee.isEmpty()) {
-            throw new EntityNotFoundException("Employee with id " + id + " does not exists!");
+                throw new EntityNotFoundException("Employee with id " + id + " does not exists!");
+            }
+
+            if (!Objects.equals(newEmployee.getCpf(), employee.get().getCpf())) {
+                if (repository.existsByCpf(newEmployee.getCpf())) {
+                    throw new EntityAlreadyExistsException("Employee with cpf " + newEmployee.getCpf() + " already exists.");
+                }
+            }
+
+            if (newEmployee.getGender() == Gender.UNKNOW) {
+                throw new InvalidEnumException("Gender does not exists. Enter Male or Female.");
         }
 
-        if(newEmployee.getGender() == Gender.UNKNOW){
-            throw new GenderEnumException();
-        }
+        addressService.createOrUpdateAddress(newEmployee.getAddress()).ifPresent(newEmployee::setAddress);
+        companyService.getCompanyIfAlreadyExists(newEmployee.getEmployer()).ifPresent(newEmployee::setEmployer);
 
         employee.get().setName(newEmployee.getName());
         employee.get().setLastname(newEmployee.getLastname());
         employee.get().setCpf(newEmployee.getCpf());
-        employee.get().setAddress(newEmployee.getAddress());
         employee.get().setPhoneContact(newEmployee.getPhoneContact());
         employee.get().setGender(newEmployee.getGender());
         employee.get().setBirthday(newEmployee.getBirthday());
         employee.get().setHiredate(newEmployee.getHiredate());
         employee.get().setEmployer(newEmployee.getEmployer());
+        employee.get().setAddress(newEmployee.getAddress());
 
-        createEmployee(employee.get());
+        repository.save(employee.get());
 
         return id;
 

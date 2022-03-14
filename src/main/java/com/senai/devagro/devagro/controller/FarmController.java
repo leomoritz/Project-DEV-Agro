@@ -2,11 +2,11 @@ package com.senai.devagro.devagro.controller;
 
 import com.senai.devagro.devagro.controller.converter.FarmConverter;
 import com.senai.devagro.devagro.dto.FarmDTO;
-import com.senai.devagro.devagro.service.AddressService;
-import com.senai.devagro.devagro.service.CompanyService;
+import com.senai.devagro.devagro.dto.FarmsByCompanyDTO;
+import com.senai.devagro.devagro.dto.StandardMessageDTO;
 import com.senai.devagro.devagro.service.FarmService;
-import com.senai.devagro.devagro.service.GrainService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,19 +20,10 @@ public class FarmController {
     @Autowired
     private FarmService farmService;
 
-    @Autowired
-    private CompanyService companyService;
-
-    @Autowired
-    private AddressService addressService;
-
-    @Autowired
-    private GrainService grainService;
-
     //CREATE
     @PostMapping("/create")
     public ResponseEntity<FarmDTO> createFarm(@Valid @RequestBody FarmConverter farm){
-        FarmDTO farmDto = farmService.createFarm(farm.converter(companyService, addressService, grainService));
+        FarmDTO farmDto = farmService.createFarm(farm.converter());
         return ResponseEntity.ok().body(farmDto);
     }
 
@@ -49,18 +40,39 @@ public class FarmController {
         return ResponseEntity.ok().body(farmDto);
     }
 
+    @GetMapping("/farmsCompany/{companyId}")
+    public ResponseEntity<List<FarmDTO>> findAllFarmsByCompanyId(@PathVariable Long companyId){
+        List<FarmDTO> farmsDtos = farmService.findAllFarmsByCompanyId(companyId);
+        return ResponseEntity.ok().body(farmsDtos);
+    }
+
+    @GetMapping(value = "/countFarmsCompany/{companyId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<StandardMessageDTO> countFarmsByCompanyId(@PathVariable Long companyId){
+        Long countFarms = farmService.countByCompany(companyId);
+        StandardMessageDTO standardMessageDTO = new StandardMessageDTO("Total company farms: " + countFarms);
+        return ResponseEntity.ok().body(standardMessageDTO);
+    }
+
+    @GetMapping("/expectedDateNextHarvest/{companyId}")
+    public ResponseEntity<List<FarmsByCompanyDTO>> getFarmsCompanyWithExpectedDateNextHarvest(@PathVariable Long companyId){
+        List<FarmsByCompanyDTO> farmsByCompanyDtos = farmService.findAllFarmsCompanyWithExpectedDateNextHarvest(companyId);
+        return ResponseEntity.ok().body(farmsByCompanyDtos);
+    }
+
     //UPDATE
-    @PutMapping("/update/{id}")
-    public ResponseEntity<Long> updateFarmById(@PathVariable Long id, @Valid @RequestBody FarmConverter farm){
-        Long idUpdated = farmService.updateFarmById(id, farm.converter(companyService, addressService, grainService));
-        return ResponseEntity.ok().body(idUpdated);
+    @PutMapping(value = "/update/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<StandardMessageDTO> updateFarmById(@PathVariable Long id, @Valid @RequestBody FarmConverter farm){
+        Long idUpdated = farmService.updateFarmById(id, farm.converter());
+        StandardMessageDTO standardMessageDTO = new StandardMessageDTO("Farm with ID " + idUpdated + " successfully updated!");
+        return ResponseEntity.ok().body(standardMessageDTO);
     }
 
     //DELETE
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Long> deleteFarmById(@PathVariable Long id){
+    @DeleteMapping(value = "/delete/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<StandardMessageDTO> deleteFarmById(@PathVariable Long id){
         Long idDeleted = farmService.deleteFarmById(id);
-        return ResponseEntity.ok().body(idDeleted);
+        StandardMessageDTO standardMessageDTO = new StandardMessageDTO("Farm with ID " + idDeleted + " successfully deleted!");
+        return ResponseEntity.ok().body(standardMessageDTO);
     }
 
 }

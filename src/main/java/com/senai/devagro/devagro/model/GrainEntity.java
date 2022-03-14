@@ -21,7 +21,7 @@ public class GrainEntity {
     private String name;
 
     @ManyToOne
-    @JoinColumn(name = "grain_id")
+    @JoinColumn(name = "company_id")
     private CompanyEntity company;
 
     @Column(name = "average_harvest_time")

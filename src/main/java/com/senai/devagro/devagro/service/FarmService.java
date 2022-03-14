@@ -1,14 +1,18 @@
 package com.senai.devagro.devagro.service;
 
 import com.senai.devagro.devagro.dto.FarmDTO;
+import com.senai.devagro.devagro.dto.FarmsByCompanyDTO;
 import com.senai.devagro.devagro.model.FarmEntity;
 import com.senai.devagro.devagro.repository.FarmRepository;
+import com.senai.devagro.devagro.service.exceptions.EntityAlreadyExistsException;
 import com.senai.devagro.devagro.service.exceptions.EntityNotFoundException;
 import com.senai.devagro.devagro.service.exceptions.EntityNullException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -17,6 +21,15 @@ public class FarmService {
 
     @Autowired
     private FarmRepository repository;
+
+    @Autowired
+    private AddressService addressService;
+
+    @Autowired
+    private CompanyService companyService;
+
+    @Autowired
+    private GrainService grainService;
 
     /**
      * Busca todas as fazendas cadastradas no banco de dados e converte para dto (FarmDTO::new).
@@ -48,6 +61,27 @@ public class FarmService {
     }
 
     /**
+     * Busca todas as fazendas cadastradas no banco de dados por meio do ID da empresa e converte para dto (FarmDTO::new).
+     *
+     * @param companyId
+     * @return uma lista com o dto das fazendas que foram encontradas no banco de dados através do ID da empresa.
+     */
+    public List<FarmDTO> findAllFarmsByCompanyId(Long companyId) {
+        return repository.findAllByCompanyId(companyId).stream().map(FarmDTO::new).collect(Collectors.toList());
+    }
+
+    /**
+     * Busca todas as fazendas cadastradas no banco de dados por meio do ID da empresa.
+     *
+     * @param companyId
+     * @return a quantidade de fazendas encontradas através do ID da empresa.
+     */
+    public Long countByCompany(Long companyId) {
+        return repository.countByCompanyId(companyId);
+    }
+
+
+    /**
      * Cadastra uma fazenda no banco de dados com base nos dados informados.
      *
      * @param entity
@@ -56,6 +90,14 @@ public class FarmService {
     public FarmDTO createFarm(FarmEntity entity) {
         if (entity == null) {
             throw new EntityNullException("Farm cannot be empty or null!");
+        }
+
+        addressService.createOrUpdateAddress(entity.getAddress()).ifPresent(entity::setAddress);
+        companyService.getCompanyIfAlreadyExists(entity.getCompany()).ifPresent(entity::setCompany);
+        grainService.createOrUpdateGrain(entity.getGrainProduced()).ifPresent(entity::setGrainProduced);
+
+        if (farmAlreadyExist(entity.getName(), entity.getAddress().getId(), entity.getCompany().getId())) {
+            throw new EntityAlreadyExistsException("The entered farm already exists.");
         }
 
         FarmEntity farm = repository.save(entity);
@@ -67,7 +109,8 @@ public class FarmService {
     /**
      * Atualiza uma fazenda no banco de dados com base no ID e nos novos dados da fazenda.
      *
-     * @param id, newFarm
+     * @param id
+     * @param newFarm
      * @return o id da fazenda que foi alterada.
      */
     public Long updateFarmById(Long id, FarmEntity newFarm) {
@@ -81,6 +124,18 @@ public class FarmService {
             throw new EntityNotFoundException("Farm with id " + id + " does not exists!");
         }
 
+        addressService.createOrUpdateAddress(newFarm.getAddress()).ifPresent(newFarm::setAddress);
+        companyService.getCompanyIfAlreadyExists(newFarm.getCompany()).ifPresent(newFarm::setCompany);
+        grainService.createOrUpdateGrain(newFarm.getGrainProduced()).ifPresent(newFarm::setGrainProduced);
+
+        if (!(farm.get().getName().equalsIgnoreCase(newFarm.getName()) &&
+                Objects.equals(farm.get().getAddress().getId(), newFarm.getAddress().getId()) &&
+                Objects.equals(farm.get().getCompany().getId(), newFarm.getCompany().getId()))) {
+            if (farmAlreadyExist(newFarm.getName(), newFarm.getAddress().getId(), newFarm.getCompany().getId())) {
+                throw new EntityAlreadyExistsException("The entered farm already exists.");
+            }
+        }
+
         farm.get().setName(newFarm.getName());
         farm.get().setAddress(newFarm.getAddress());
         farm.get().setCompany(newFarm.getCompany());
@@ -88,7 +143,7 @@ public class FarmService {
         farm.get().setInitialInventoryKg(newFarm.getInitialInventoryKg());
         farm.get().setLastHarvest(newFarm.getLastHarvest());
 
-        createFarm(farm.get());
+        repository.save(farm.get());
 
         return id;
 
@@ -114,6 +169,51 @@ public class FarmService {
         repository.delete(farm.get());
 
         return id;
+
+    }
+
+    /**
+     * Verifica se a fazenda já existe
+     *
+     * @param name
+     * @param addressId
+     * @param companyId
+     * @return uma fazenda caso ela exista
+     */
+    public boolean farmAlreadyExist(String name, Long addressId, Long companyId) {
+        return repository.existsByNameAndAddress_IdAndCompany_Id(name, addressId, companyId);
+    }
+
+    /**
+     * Busca as fazendas de uma determinada empresa e a data da próxima colheita desta fazenda.
+     *
+     * @param companyId
+     * @return uma lista DTO de fazendas de uma empresa com a data prevista da próxima colheita
+     */
+
+    public List<FarmsByCompanyDTO> findAllFarmsCompanyWithExpectedDateNextHarvest(Long companyId) {
+
+        List<FarmEntity> farmsCompany = repository.findAllByCompanyId(companyId);
+
+        return farmsCompany.stream().map(
+                entity -> new FarmsByCompanyDTO(entity, getExpectedDateNextHarvest(entity))
+        ).collect(Collectors.toList());
+
+    }
+
+    /**
+     * Calcula a data prevista para a próxima colheita considerando a data da última colheita e o tempo médio de colheita do grão produzido pela fazenda.
+     *
+     * @param farm
+     * @return a data prevista para a próxima colheita.
+     */
+
+    private LocalDate getExpectedDateNextHarvest(FarmEntity farm) {
+
+        LocalDate lastHarvest = farm.getLastHarvest();
+        Integer averageHarvestTime = farm.getGrainProduced().getAverageHarvestTime();
+
+        return lastHarvest.plusDays(averageHarvestTime);
 
     }
 

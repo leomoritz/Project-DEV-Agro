@@ -3,6 +3,7 @@ package com.senai.devagro.devagro.service;
 import com.senai.devagro.devagro.dto.CompanyDTO;
 import com.senai.devagro.devagro.model.AddressEntity;
 import com.senai.devagro.devagro.model.CompanyEntity;
+import com.senai.devagro.devagro.model.EmployeeEntity;
 import com.senai.devagro.devagro.repository.CompanyRepository;
 import com.senai.devagro.devagro.service.exceptions.EntityAlreadyExistsException;
 import com.senai.devagro.devagro.service.exceptions.EntityNotFoundException;
@@ -60,7 +61,7 @@ public class CompanyService {
      * @param id
      * @return o entity da empresa que foi encontrada pelo ID.
      */
-    public CompanyEntity getCompanyEntityById(Long id) {
+    public Optional<CompanyEntity> getCompanyEntityById(Long id) {
         if (id == null) {
             throw new EntityNullException("Company ID cannot be empty or null.");
         }
@@ -71,8 +72,22 @@ public class CompanyService {
             throw new EntityNotFoundException("Company with id " + id + " does not exists!");
         }
 
-        return company.get();
+        return company;
 
+    }
+
+    /**
+     * Busca uma empresa no banco de dados com base no CNPJ informado.
+     *
+     * @param cnpj
+     * @return o entity da empresa que foi encontrada pelo CNPJ.
+     */
+    protected Optional<CompanyEntity> getCompanyEntityByCnpj(String cnpj) {
+        if (cnpj == null) {
+            throw new EntityNullException("Cnpj cannot be empty or null.");
+        }
+
+        return repository.findByCnpj(cnpj);
     }
 
     /**
@@ -90,14 +105,16 @@ public class CompanyService {
             throw new EntityAlreadyExistsException("Company with cnpj " + entity.getCnpj() + " already exists.");
         }
 
-        Optional<AddressEntity> address =
+        /*Optional<AddressEntity> address =
                 addressService.getAddressEntityByPostalcodeAndNumber(entity.getAddress().getPostalcode(), entity.getAddress().getNumber());
 
         if (address.isPresent()) {
             entity.setAddress(address.get());
         } else {
             addressService.createAddress(entity.getAddress());
-        }
+        }*/
+
+        addressService.createOrUpdateAddress(entity.getAddress()).ifPresent(entity::setAddress);
 
         CompanyEntity company = repository.save(entity);
 
@@ -128,18 +145,14 @@ public class CompanyService {
             }
         }
 
-        Long addressId = addressService.updateAddressById(company.get().getAddress().getId(), newCompany.getAddress());
-        AddressEntity address = addressService.getAddressEntityById(addressId);
+        addressService.createOrUpdateAddress(newCompany.getAddress()).ifPresent(newCompany::setAddress);
 
-        if (address != null) {
-            company.get().setName(newCompany.getName());
-            company.get().setCnpj(newCompany.getCnpj());
-            company.get().setAddress(address);
-            repository.save(company.get());
-        }
+        company.get().setName(newCompany.getName());
+        company.get().setCnpj(newCompany.getCnpj());
+        company.get().setAddress(newCompany.getAddress());
+        repository.save(company.get());
 
         return id;
-
     }
 
     /**
@@ -163,6 +176,16 @@ public class CompanyService {
 
         return id;
 
+    }
+
+    /**
+     * Verifica se a empresa informada já existe. Se existir então apenas atualiza, se não lança uma exceção
+     *
+     * @param companyEntity
+     * @return a empresa que já existe.
+     */
+    protected Optional<CompanyEntity> getCompanyIfAlreadyExists(CompanyEntity companyEntity) {
+        return getCompanyEntityById(companyEntity.getId());
     }
 
 }

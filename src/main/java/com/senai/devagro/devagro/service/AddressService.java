@@ -2,6 +2,7 @@ package com.senai.devagro.devagro.service;
 
 import com.senai.devagro.devagro.dto.AddressDTO;
 import com.senai.devagro.devagro.model.AddressEntity;
+import com.senai.devagro.devagro.model.EmployeeEntity;
 import com.senai.devagro.devagro.repository.AddressRepository;
 import com.senai.devagro.devagro.service.exceptions.EntityAlreadyExistsException;
 import com.senai.devagro.devagro.service.exceptions.EntityNotFoundException;
@@ -81,9 +82,7 @@ public class AddressService {
             throw new EntityNullException("Postalcode or number cannot be empty or null");
         }
 
-        Optional<AddressEntity> address = repository.findByPostalcodeAndNumber(postalcode, number);
-
-        return address;
+        return repository.findByPostalcodeAndNumber(postalcode, number);
 
     }
 
@@ -156,5 +155,25 @@ public class AddressService {
         return id;
 
     }
+
+    /**
+     * Verifica se o endereço já existe. Se existir então apenas atualiza, se não cria um novo endereço.
+     *
+     * @param addressEntity
+     * @return o endereço criado ou atualizado.
+     */
+    protected Optional<AddressEntity> createOrUpdateAddress(AddressEntity addressEntity) {
+        Optional<AddressEntity> address =
+                getAddressEntityByPostalcodeAndNumber(addressEntity.getPostalcode(), addressEntity.getNumber());
+
+        if (address.isPresent()) {
+            updateAddressById(address.get().getId(), addressEntity);
+            return address;
+        } else {
+            Long addressId = createAddress(addressEntity).getId();
+            return Optional.of(getAddressEntityById(addressId));
+        }
+    }
+
 
 }

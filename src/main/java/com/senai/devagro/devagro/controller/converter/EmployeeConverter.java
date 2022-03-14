@@ -1,25 +1,27 @@
 package com.senai.devagro.devagro.controller.converter;
 
+import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.senai.devagro.devagro.model.AddressEntity;
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.senai.devagro.devagro.model.CompanyEntity;
 import com.senai.devagro.devagro.model.EmployeeEntity;
 import com.senai.devagro.devagro.model.enums.Gender;
-import com.senai.devagro.devagro.service.AddressService;
-import com.senai.devagro.devagro.service.CompanyService;
 import com.senai.devagro.devagro.utils.UtilLocalDateConverter;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.validator.constraints.br.CPF;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
+
+import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -38,14 +40,11 @@ public class EmployeeConverter {
     @Pattern(message = "CPF format is invalid. Enter the CPF in format XXX.XXX.XXX-XX", regexp = "[0-9]{3}\\.[0-9]{3}\\.[0-9]{3}\\-[0-9]{2}")
     private String cpf;
 
-    @NotNull(message = "Address is required.")
-    private AddressConverter address;
-
     @NotBlank(message = "Phone is required.")
     @Pattern(message = "Phone format is invalid. Enter the Phone in format (XX)XXXXXXXXX", regexp = "\\([0-9]{2}\\) ([0-9]{9})")
     private String phoneContact;
 
-    @NotBlank(message = "Gender is required. Enter MALE or FEMALE")
+    @NotBlank(message = "Gender is required. Enter Male or Female")
     private String gender;
 
     @NotNull(message = "Birthday is required.")
@@ -59,23 +58,42 @@ public class EmployeeConverter {
     @NotNull(message = "Company ID is required.")
     private Long employerId;
 
-    public EmployeeEntity converter(){
+    @NotNull(message = "Address is required.")
+    @Valid
+    private AddressConverter address;
+
+    public EmployeeEntity converter() {
 
         EmployeeEntity employee = new EmployeeEntity();
-        CompanyEntity company = new CompanyEntity();
-        company.setId(employerId);
 
         employee.setName(name);
         employee.setLastname(lastname);
         employee.setCpf(cpf);
         employee.setAddress(address.converter());
         employee.setPhoneContact(phoneContact);
-        employee.setGender(Enum.valueOf(Gender.class, gender.toUpperCase())); // converte uma String para um Enum class especificado
+        employee.setGender(convertStringGenderToEnum(gender.toUpperCase()));
         employee.setBirthday(UtilLocalDateConverter.stringToLocalDate(birthday));
         employee.setHiredate(UtilLocalDateConverter.stringToLocalDate(hiredate));
-        employee.setEmployer(company);
-        //employee.setEmployer(companyService.getCompanyEntityById(employerId));
+        employee.setEmployer(getEmployeeCompany());
 
         return employee;
+    }
+
+    private CompanyEntity getEmployeeCompany() {
+        CompanyEntity company = new CompanyEntity();
+        company.setId(this.employerId);
+        return company;
+    }
+
+    private Gender convertStringGenderToEnum(String gender) {
+
+        switch (gender) {
+            case "MALE", "FEMALE" -> {
+                return Enum.valueOf(Gender.class, gender);
+            }
+            default -> {
+                return Gender.UNKNOW;
+            }
+        }
     }
 }

@@ -9,18 +9,18 @@ import java.util.List;
 @Repository
 public interface FarmRepository extends JpaRepository<FarmEntity, Long> {
 
-    //boolean existsByNameAndAnddressAndCompany(String name, Long addressId, Long companyId);
+    boolean existsByNameAndAddress_IdAndCompany_Id(String name, Long addressId, Long companyId);
 
     /**
      * @param companyId
      * @return retorna a lista de fazendas de uma empresa
      */
-    public List<FarmEntity> findAllByCompany(Long companyId);
+    public List<FarmEntity> findAllByCompanyId(Long companyId);
 
     /**
      * @param companyId
      * @return retorna a quantidade de fazendas de uma empresa.
      */
-    public Long countByCompany(Long companyId);
+    public Long countByCompanyId(Long companyId);
 
 }

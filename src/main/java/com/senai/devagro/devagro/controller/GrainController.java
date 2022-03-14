@@ -17,13 +17,10 @@ public class GrainController {
     @Autowired
     private GrainService grainService;
 
-    @Autowired
-    private CompanyService companyService;
-
     //CREATE
     @PostMapping("/create")
     public ResponseEntity<GrainDTO> createGrain(@Valid @RequestBody GrainConverter grain){
-        GrainDTO grainDto = grainService.createGrain(grain.converter(companyService));
+        GrainDTO grainDto = grainService.createGrain(grain.converter());
         return ResponseEntity.ok().body(grainDto);
     }
 
@@ -43,7 +40,7 @@ public class GrainController {
     //UPDATE
     @PutMapping("/update/{id}")
     public ResponseEntity<Long> updateGrainById(@PathVariable Long id, @Valid @RequestBody GrainConverter grain){
-        Long idUpdated = grainService.updateGrainById(id, grain.converter(companyService));
+        Long idUpdated = grainService.updateGrainById(id, grain.converter());
         return ResponseEntity.ok().body(idUpdated);
     }
 

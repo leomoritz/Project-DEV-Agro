@@ -1,5 +1,6 @@
 package com.senai.devagro.devagro.controller.converter;
 
+import com.senai.devagro.devagro.model.CompanyEntity;
 import com.senai.devagro.devagro.model.GrainEntity;
 import com.senai.devagro.devagro.service.CompanyService;
 import lombok.AllArgsConstructor;
@@ -26,14 +27,20 @@ public class GrainConverter {
     @NotNull(message = "Average harvest time is required.")
     private Integer averageHarvestTime;
 
-    public GrainEntity converter(CompanyService companyService) {
+    public GrainEntity converter() {
         GrainEntity entity = new GrainEntity();
 
         entity.setName(name);
-        entity.setCompany(companyService.getCompanyEntityById(companyId));
+        entity.setCompany(getFarmCompany());
         entity.setAverageHarvestTime(averageHarvestTime);
 
         return entity;
+    }
+
+    private CompanyEntity getFarmCompany() {
+        CompanyEntity company = new CompanyEntity();
+        company.setId(companyId);
+        return company;
     }
 
 }
