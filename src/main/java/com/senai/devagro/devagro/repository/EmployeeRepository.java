@@ -15,12 +15,12 @@ public interface EmployeeRepository extends JpaRepository<EmployeeEntity, Long> 
      * @param companyId
      * @return retorna a lista de colaboradores de uma empresa
      */
-    public List<EmployeeEntity> findAllByEmployer(Long companyId);
+    public List<EmployeeEntity> findAllByEmployerId(Long companyId);
 
     /**
      * @param companyId
      * @return retorna a quantidade de colaboradores de uma empresa.
      */
-    public Long countByEmployer(Long companyId);
+    public Long countByEmployerId(Long companyId);
 
 }

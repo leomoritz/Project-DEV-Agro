@@ -1,7 +1,9 @@
 package com.senai.devagro.devagro.repository;
 
+import com.senai.devagro.devagro.dto.GrainStockByCompanyDTO;
 import com.senai.devagro.devagro.model.FarmEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -22,5 +24,14 @@ public interface FarmRepository extends JpaRepository<FarmEntity, Long> {
      * @return retorna a quantidade de fazendas de uma empresa.
      */
     public Long countByCompanyId(Long companyId);
+
+    /**
+     * Consulta customizada para buscar os grãos associados à fazenda com base na empresa informada.
+     *
+     * @param companyId
+     * @return
+     */
+    @Query("SELECT obj FROM FarmEntity obj JOIN FETCH obj.grainProduced WHERE obj.company.id = :companyId")
+    List<FarmEntity> findAllGrainsInStockByCompanyId(Long companyId);
 
 }

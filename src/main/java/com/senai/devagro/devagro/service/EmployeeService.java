@@ -59,6 +59,26 @@ public class EmployeeService {
     }
 
     /**
+     * Busca todos os funcionários por empresa.
+     *
+     * @param companyId
+     * @return uma lista dto de todos os funcionários de uma determinada empresa.
+     */
+    public List<EmployeeDTO> findAllByEmployerId(Long companyId) {
+        return repository.findAllByEmployerId(companyId).stream().map(EmployeeDTO::new).collect(Collectors.toList());
+    }
+
+    /**
+     * Faz a contagem da quantidade de funcionários por empresa
+     *
+     * @param companyId
+     * @return a quantidade de funcionários de uma determinada empresa
+     */
+    public Long countByEmployerId(Long companyId) {
+        return repository.countByEmployerId(companyId);
+    }
+
+    /**
      * Cadastra um funcionário no banco de dados com base nos dados informados.
      *
      * @param entity
@@ -99,17 +119,17 @@ public class EmployeeService {
         Optional<EmployeeEntity> employee = repository.findById(id);
 
         if (employee.isEmpty()) {
-                throw new EntityNotFoundException("Employee with id " + id + " does not exists!");
-            }
+            throw new EntityNotFoundException("Employee with id " + id + " does not exists!");
+        }
 
-            if (!Objects.equals(newEmployee.getCpf(), employee.get().getCpf())) {
-                if (repository.existsByCpf(newEmployee.getCpf())) {
-                    throw new EntityAlreadyExistsException("Employee with cpf " + newEmployee.getCpf() + " already exists.");
-                }
+        if (!Objects.equals(newEmployee.getCpf(), employee.get().getCpf())) {
+            if (repository.existsByCpf(newEmployee.getCpf())) {
+                throw new EntityAlreadyExistsException("Employee with cpf " + newEmployee.getCpf() + " already exists.");
             }
+        }
 
-            if (newEmployee.getGender() == Gender.UNKNOW) {
-                throw new InvalidEnumException("Gender does not exists. Enter Male or Female.");
+        if (newEmployee.getGender() == Gender.UNKNOW) {
+            throw new InvalidEnumException("Gender does not exists. Enter Male or Female.");
         }
 
         addressService.createOrUpdateAddress(newEmployee.getAddress()).ifPresent(newEmployee::setAddress);

@@ -38,6 +38,18 @@ public class EmployeeController {
         return ResponseEntity.ok().body(employeeDto);
     }
 
+    @GetMapping("/findAllEmployeesByCompany/{companyId}")
+    public ResponseEntity<List<EmployeeDTO>> findAllEmployeesByCompanyId(@PathVariable Long companyId){
+        List<EmployeeDTO> employeeDtos = employeeService.findAllByEmployerId(companyId);
+        return ResponseEntity.ok().body(employeeDtos);
+    }
+
+    @GetMapping("/countAllEmployeesByCompany/{companyId}")
+    public ResponseEntity<Long> countAllEmployeesByCompanyId(@PathVariable Long companyId){
+        Long countEmployeesByCompany = employeeService.countByEmployerId(companyId);
+        return ResponseEntity.ok().body(countEmployeesByCompany);
+    }
+
     //UPDATE
     @PutMapping("/update/{id}")
     public ResponseEntity<Long> updateEmployeeById(@PathVariable Long id, @Valid @RequestBody EmployeeConverter employee){

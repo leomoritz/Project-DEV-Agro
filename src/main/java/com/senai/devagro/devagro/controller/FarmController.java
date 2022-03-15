@@ -63,6 +63,12 @@ public class FarmController {
         return ResponseEntity.ok().body(farmsByCompanyDtos);
     }
 
+    @GetMapping("/findAllGrainsInStockFarmByCompany/{companyId}")
+    public ResponseEntity<List<GrainStockByCompanyDTO>> findAllGrainsInStockFarmByCompanyId(@PathVariable Long companyId){
+        List<GrainStockByCompanyDTO> grainsDtos = farmService.findAllGrainsInStockByCompanyId(companyId);
+        return ResponseEntity.ok().body(grainsDtos);
+    }
+
     //UPDATE
     @PutMapping(value = "/update/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<StandardMessageDTO> updateFarmById(@PathVariable Long id, @Valid @RequestBody FarmConverter farm) {

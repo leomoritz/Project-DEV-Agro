@@ -1,6 +1,8 @@
 package com.senai.devagro.devagro.service;
 
 import com.senai.devagro.devagro.dto.GrainDTO;
+import com.senai.devagro.devagro.dto.GrainStockByCompanyDTO;
+import com.senai.devagro.devagro.model.FarmEntity;
 import com.senai.devagro.devagro.model.GrainEntity;
 import com.senai.devagro.devagro.repository.GrainRepository;
 import com.senai.devagro.devagro.service.exceptions.EntityAlreadyExistsException;
@@ -10,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -51,6 +54,16 @@ public class GrainService {
 
         return new GrainDTO(grain.get());
 
+    }
+
+    /**
+     * Busca todos os grãos de uma determinada empresa.
+     *
+     * @param companyId
+     * @return uma lista dto de grãos de uma determinada empresa.
+     */
+    public List<GrainDTO> findAllByCompanyId(Long companyId) {
+        return repository.findAllByCompanyId(companyId).stream().map(GrainDTO::new).collect(Collectors.toList());
     }
 
     /**

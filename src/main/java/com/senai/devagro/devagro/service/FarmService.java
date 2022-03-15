@@ -1,9 +1,6 @@
 package com.senai.devagro.devagro.service;
 
-import com.senai.devagro.devagro.dto.FarmDTO;
-import com.senai.devagro.devagro.dto.FarmHarvestDTO;
-import com.senai.devagro.devagro.dto.FarmWithdrawalGrainDTO;
-import com.senai.devagro.devagro.dto.FarmsByCompanyDTO;
+import com.senai.devagro.devagro.dto.*;
 import com.senai.devagro.devagro.model.FarmEntity;
 import com.senai.devagro.devagro.repository.FarmRepository;
 import com.senai.devagro.devagro.service.exceptions.*;
@@ -100,6 +97,15 @@ public class FarmService {
         return repository.countByCompanyId(companyId);
     }
 
+    /**
+     * Busca todos os grãos de uma determinada empresa e que estão associados a uma fazenda para buscar a quantidade de estoque de cada grão.
+     *
+     * @param companyId
+     * @return um dto com os grãos e quantidade em estoque de cada um.
+     */
+    public List<GrainStockByCompanyDTO> findAllGrainsInStockByCompanyId(Long companyId) {
+        return repository.findAllGrainsInStockByCompanyId(companyId).stream().map(GrainStockByCompanyDTO::new).collect(Collectors.toList());
+    }
 
     /**
      * Cadastra uma fazenda no banco de dados com base nos dados informados.
@@ -249,7 +255,7 @@ public class FarmService {
 
         FarmEntity farm = findFarmEntityById(id);
 
-        if(farm == null){
+        if (farm == null) {
             throw new EntityNullException("The farm cannot be empty or null.");
         }
 
@@ -268,15 +274,24 @@ public class FarmService {
         return new FarmHarvestDTO(farm, quantityKgHarvested, harvestDate);
     }
 
-    public FarmWithdrawalGrainDTO withdrawalGrainByFarmId(Long id, Double quantityKgWithdrawal, LocalDate withdrawalDate){
+    /**
+     * Registra a retirada de grãos de uma determinada fazenda diminuindo o estoque da mesma.
+     *
+     * @param id
+     * @param quantityKgWithdrawal
+     * @param withdrawalDate
+     * @return um dto com as informações da retirada do grão do estoque da fazenda.
+     */
+
+    public FarmWithdrawalGrainDTO withdrawalGrainByFarmId(Long id, Double quantityKgWithdrawal, LocalDate withdrawalDate) {
 
         FarmEntity farm = findFarmEntityById(id);
 
-        if(farm == null){
+        if (farm == null) {
             throw new EntityNullException("The farm cannot be empty or null.");
         }
 
-        if(quantityKgWithdrawal > farm.getInitialInventoryKg()){
+        if (quantityKgWithdrawal > farm.getInitialInventoryKg()) {
             throw new InsufficientGrainStockException();
         }
 
@@ -296,7 +311,13 @@ public class FarmService {
 
     }
 
-
+    /**
+     * Consiste a quantidade de kg que será inserida/retirada do estoque.
+     *
+     * @param farm
+     * @param quantityKg
+     * @return true se não houver incosistências
+     */
     private boolean consistQuantityKg(FarmEntity farm, Double quantityKg) {
         if (quantityKg == null) {
             throw new EntityNullException("The quantity cannot be empty or null.");

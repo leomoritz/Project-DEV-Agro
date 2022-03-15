@@ -2,7 +2,6 @@ package com.senai.devagro.devagro.controller;
 
 import com.senai.devagro.devagro.controller.converter.GrainConverter;
 import com.senai.devagro.devagro.dto.GrainDTO;
-import com.senai.devagro.devagro.service.CompanyService;
 import com.senai.devagro.devagro.service.GrainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +34,12 @@ public class GrainController {
     public ResponseEntity<GrainDTO> findGrainById(@PathVariable Long id){
         GrainDTO grainDto = grainService.findGrainById(id);
         return ResponseEntity.ok().body(grainDto);
+    }
+
+    @GetMapping("/findAllByCompany/{companyId}")
+    public ResponseEntity<List<GrainDTO>> findAllByCompanyId(@PathVariable Long companyId){
+        List<GrainDTO> grainsDtos = grainService.findAllByCompanyId(companyId);
+        return ResponseEntity.ok().body(grainsDtos);
     }
 
     //UPDATE
