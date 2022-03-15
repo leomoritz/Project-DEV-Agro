@@ -31,7 +31,7 @@ public interface FarmRepository extends JpaRepository<FarmEntity, Long> {
      * @param companyId
      * @return
      */
-    @Query("SELECT obj FROM FarmEntity obj JOIN FETCH obj.grainProduced WHERE obj.company.id = :companyId")
+    @Query("SELECT obj FROM FarmEntity obj JOIN FETCH obj.grainProduced WHERE obj.company.id = :companyId ORDER BY obj.initialInventoryKg ASC")
     List<FarmEntity> findAllGrainsInStockByCompanyId(Long companyId);
 
 }
