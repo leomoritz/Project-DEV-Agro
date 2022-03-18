@@ -7,6 +7,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import java.time.LocalDate;
+import java.util.Objects;
 
 @NoArgsConstructor
 @Getter
@@ -50,4 +51,16 @@ public class FarmEntity {
         this.lastHarvest = lastHarvest;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FarmEntity entity = (FarmEntity) o;
+        return name.equals(entity.name) && address.equals(entity.address) && company.equals(entity.company);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, address, company);
+    }
 }

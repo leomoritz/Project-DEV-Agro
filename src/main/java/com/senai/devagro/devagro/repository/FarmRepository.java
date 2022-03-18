@@ -2,6 +2,7 @@ package com.senai.devagro.devagro.repository;
 
 import com.senai.devagro.devagro.dto.GrainStockByCompanyDTO;
 import com.senai.devagro.devagro.model.FarmEntity;
+import com.senai.devagro.devagro.model.GrainEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -31,7 +32,8 @@ public interface FarmRepository extends JpaRepository<FarmEntity, Long> {
      * @param companyId
      * @return
      */
-    @Query("SELECT obj FROM FarmEntity obj JOIN FETCH obj.grainProduced WHERE obj.company.id = :companyId ORDER BY obj.initialInventoryKg ASC")
+    @Query("SELECT obj FROM FarmEntity obj JOIN obj.grainProduced WHERE obj.company.id = :companyId")
     List<FarmEntity> findAllGrainsInStockByCompanyId(Long companyId);
+
 
 }

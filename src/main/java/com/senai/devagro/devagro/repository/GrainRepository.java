@@ -1,19 +1,16 @@
 package com.senai.devagro.devagro.repository;
 
-import com.senai.devagro.devagro.dto.GrainStockByCompanyDTO;
 import com.senai.devagro.devagro.model.GrainEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Repository
 public interface GrainRepository extends JpaRepository<GrainEntity, Long> {
 
-    boolean existsByNameAndCompany_Id(String name, Long companyId);
+    boolean existsByNameAndAverageHarvestTimeAndCompany_Id(String name, Integer averageHarvestTime, Long companyId);
 
     /**
      * @param companyId
@@ -29,5 +26,4 @@ public interface GrainRepository extends JpaRepository<GrainEntity, Long> {
      * @return retorna um grão se for encontrado
      */
     Optional<GrainEntity> findByNameAndCompany_Id(String name, Long companyId);
-
 }

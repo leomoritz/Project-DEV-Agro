@@ -35,6 +35,15 @@ public class CompanyService {
     }
 
     /**
+     * Busca todas as empresas cadastradas no banco de dados.
+     *
+     * @return uma lista com a entidade das empresas que foram encontradas no banco de dados.
+     */
+    public List<CompanyEntity> findAllCompaniesEntities() {
+        return repository.findAll();
+    }
+
+    /**
      * Busca uma empresa no banco de dados com base no ID informado.
      *
      * @param id
@@ -104,15 +113,6 @@ public class CompanyService {
         if (repository.existsByCnpj(entity.getCnpj())) {
             throw new EntityAlreadyExistsException("Company with cnpj " + entity.getCnpj() + " already exists.");
         }
-
-        /*Optional<AddressEntity> address =
-                addressService.getAddressEntityByPostalcodeAndNumber(entity.getAddress().getPostalcode(), entity.getAddress().getNumber());
-
-        if (address.isPresent()) {
-            entity.setAddress(address.get());
-        } else {
-            addressService.createAddress(entity.getAddress());
-        }*/
 
         addressService.createOrUpdateAddress(entity.getAddress()).ifPresent(entity::setAddress);
 

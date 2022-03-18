@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import javax.persistence.*;
+import java.util.Objects;
 
 @NoArgsConstructor
 @Getter
@@ -41,5 +42,18 @@ public class AddressEntity {
         this.city = city;
         this.state = state;
         this.postalcode = postalcode;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AddressEntity that = (AddressEntity) o;
+        return address.equals(that.address) && number.equals(that.number) && postalcode.equals(that.postalcode);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(address, number, postalcode);
     }
 }

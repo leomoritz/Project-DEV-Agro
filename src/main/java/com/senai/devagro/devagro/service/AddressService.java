@@ -97,6 +97,10 @@ public class AddressService {
             throw new EntityNullException("Address cannot be empty or null");
         }
 
+        if (repository.existsByPostalcodeAndNumber(entity.getPostalcode(), entity.getNumber())) {
+            throw new EntityAlreadyExistsException("The address entered already exists.");
+        }
+
         AddressEntity address = repository.save(entity);
 
         return new AddressDTO(address);
@@ -120,6 +124,12 @@ public class AddressService {
             throw new EntityNotFoundException("Address with id " + id + " does not exists!");
         }
 
+        if (!address.get().equals(newEntity)) {
+            if (repository.existsByPostalcodeAndNumber(newEntity.getPostalcode(), newEntity.getNumber())) {
+                throw new EntityAlreadyExistsException("The address entered already exists.");
+            }
+        }
+
         address.get().setAddress(newEntity.getAddress());
         address.get().setCity(newEntity.getCity());
         address.get().setNeighborhood(newEntity.getNeighborhood());
@@ -127,7 +137,7 @@ public class AddressService {
         address.get().setPostalcode(newEntity.getPostalcode());
         address.get().setState(newEntity.getState());
 
-        createAddress(address.get());
+        repository.save(address.get());
 
         return id;
 

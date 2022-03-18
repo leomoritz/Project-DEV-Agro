@@ -2,9 +2,11 @@ package com.senai.devagro.devagro.service;
 
 import com.senai.devagro.devagro.dto.GrainDTO;
 import com.senai.devagro.devagro.dto.GrainStockByCompanyDTO;
+import com.senai.devagro.devagro.model.CompanyEntity;
 import com.senai.devagro.devagro.model.FarmEntity;
 import com.senai.devagro.devagro.model.GrainEntity;
 import com.senai.devagro.devagro.repository.GrainRepository;
+import com.senai.devagro.devagro.service.exceptions.EntityAlreadyAssociatedException;
 import com.senai.devagro.devagro.service.exceptions.EntityAlreadyExistsException;
 import com.senai.devagro.devagro.service.exceptions.EntityNotFoundException;
 import com.senai.devagro.devagro.service.exceptions.EntityNullException;
@@ -12,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -67,12 +68,23 @@ public class GrainService {
     }
 
     /**
+     * Busca todos os grãos de uma determinada empresa.
+     *
+     * @param companyId
+     * @return uma lista de grãos de uma determinada empresa.
+     */
+    protected List<GrainEntity> getAllGrainEntityByCompanyId(Long companyId) {
+        return repository.findAllByCompanyId(companyId);
+
+    }
+
+    /**
      * Busca um grão no banco de dados com base no ID informado.
      *
      * @param id
      * @return a entidade do grão que foi encontrado pelo ID.
      */
-    public GrainEntity getGrainEntityById(Long id) {
+    public Optional<GrainEntity> getGrainEntityById(Long id) {
         if (id == null) {
             throw new EntityNullException("Id cannot be empty or null!");
         }
@@ -83,7 +95,7 @@ public class GrainService {
             throw new EntityNotFoundException("Grain with id " + id + " does not exists!");
         }
 
-        return grain.get();
+        return grain;
 
     }
 
@@ -98,7 +110,7 @@ public class GrainService {
             throw new EntityNullException("Grain cannot be empty or null!");
         }
 
-        if (grainAlreadyExist(entity.getName(), entity.getCompany().getId())) {
+        if (grainAlreadyExist(entity)) {
             throw new EntityAlreadyExistsException("The entered grain " + entity.getName() + " already exists.");
         }
 
@@ -127,13 +139,19 @@ public class GrainService {
             throw new EntityNotFoundException("Grain with id " + id + " does not exists!");
         }
 
-        if (!(grain.get().getName().equalsIgnoreCase(newGrain.getName()) && Objects.equals(grain.get().getCompany().getId(), newGrain.getCompany().getId()))) {
-            if (grainAlreadyExist(newGrain.getName(), newGrain.getCompany().getId())) {
+        companyService.getCompanyIfAlreadyExists(newGrain.getCompany()).ifPresent(newGrain::setCompany);
+
+        if (!(grain.get().equals(newGrain))) {
+            if (grainAlreadyExist(newGrain)) {
                 throw new EntityAlreadyExistsException("The entered grain already exists.");
             }
-        }
 
-        companyService.getCompanyIfAlreadyExists(newGrain.getCompany()).ifPresent(newGrain::setCompany);
+            // Não permite trocar o grão de empresa caso já tenha pelo menos uma associação com alguma fazenda da empresa atual.
+            if (grainAlreadyAssociatedWithFarm(grain.get(), newGrain)) {
+                throw new EntityAlreadyAssociatedException("The grain entered cannot be transferred to another company" +
+                        " as it is already associated with a farm.");
+            }
+        }
 
         grain.get().setName(newGrain.getName());
         grain.get().setCompany(newGrain.getCompany());
@@ -143,6 +161,27 @@ public class GrainService {
 
         return id;
 
+    }
+
+    /**
+     * Verifica se o grão já está associado a uma fazenda da empresa.
+     *
+     * @param grain
+     * @param newGrain
+     * @return verdadeiro caso o grão já esteja associado a pelo menos uma fazenda da empresa
+     */
+    private boolean grainAlreadyAssociatedWithFarm(GrainEntity grain, GrainEntity newGrain) {
+
+        if (grain.getCompany() == newGrain.getCompany()) {
+            return false;
+        }
+
+        Optional<CompanyEntity> company = companyService.getCompanyEntityById(grain.getCompany().getId());
+
+        return company.
+                map(companyEntity -> companyEntity.getFarms().stream().
+                        anyMatch(farm -> Objects.equals(farm.getGrainProduced().getId(), grain.getId()))).
+                orElse(false);
     }
 
     /**
@@ -190,27 +229,34 @@ public class GrainService {
      * @return o grão criado ou atualizado.
      */
     protected Optional<GrainEntity> createOrUpdateGrain(GrainEntity grainEntity) {
-        Optional<GrainEntity> grain =
-                getGrainEntityByNameAndCompany(grainEntity.getName(), grainEntity.getCompany().getId());
+        Optional<GrainEntity> grain = getGrainEntityByNameAndCompany(grainEntity.getName(), grainEntity.getCompany().getId());
 
         if (grain.isPresent()) {
             updateGrainById(grain.get().getId(), grainEntity);
             return grain;
         } else {
             Long grainId = createGrain(grainEntity).getId();
-            return Optional.of(getGrainEntityById(grainId));
+            return getGrainEntityById(grainId);
         }
     }
 
     /**
      * Verifica se o grão já existe.
      *
-     * @param name
-     * @param companyId
+     * @param newGrain
      * @return verdadeiro se já existir, se não falso.
      */
-    public boolean grainAlreadyExist(String name, Long companyId) {
-        return repository.existsByNameAndCompany_Id(name, companyId);
+    public boolean grainAlreadyExist(GrainEntity newGrain) {
+        return repository.existsByNameAndAverageHarvestTimeAndCompany_Id(newGrain.getName(), newGrain.getAverageHarvestTime(), newGrain.getCompany().getId());
     }
 
+    /**
+     * Verifica se o grão informada já existe. Se existir então apenas atualiza, se não lança uma exceção
+     *
+     * @param grainProduced
+     * @return o grão que já existe.
+     */
+    protected Optional<GrainEntity> getGrainIfAlreadyExists(GrainEntity grainProduced) {
+        return getGrainEntityById(grainProduced.getId());
+    }
 }

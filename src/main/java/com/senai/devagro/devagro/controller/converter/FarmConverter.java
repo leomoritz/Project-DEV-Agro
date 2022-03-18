@@ -2,6 +2,7 @@ package com.senai.devagro.devagro.controller.converter;
 
 import com.senai.devagro.devagro.model.CompanyEntity;
 import com.senai.devagro.devagro.model.FarmEntity;
+import com.senai.devagro.devagro.model.GrainEntity;
 import com.senai.devagro.devagro.utils.UtilLocalDateConverter;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -28,9 +29,9 @@ public class FarmConverter {
     @NotNull(message = "Company ID is required.")
     private Long companyId;
 
-    @NotNull(message = "Grain is required.")
+    @NotNull(message = "Grain ID is required.")
     @Valid
-    private GrainConverter grain;
+    private Long grainId;
 
     @NotNull(message = "Initial Inventory Kg is required.")
     private Double initialInventoryKg;
@@ -45,7 +46,7 @@ public class FarmConverter {
         entity.setName(name);
         entity.setAddress(address.converter());
         entity.setCompany(getFarmCompany());
-        entity.setGrainProduced(grain.converter());
+        entity.setGrainProduced(getFarmGrainProduced());
         entity.setInitialInventoryKg(initialInventoryKg);
         entity.setLastHarvest(UtilLocalDateConverter.stringToLocalDate(lastHarvest));
 
@@ -56,5 +57,11 @@ public class FarmConverter {
         CompanyEntity company = new CompanyEntity();
         company.setId(companyId);
         return company;
+    }
+
+    private GrainEntity getFarmGrainProduced() {
+        GrainEntity grainProduced = new GrainEntity();
+        grainProduced.setId(grainId);
+        return grainProduced;
     }
 }

@@ -8,10 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.*;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 public class FarmService {
@@ -34,7 +33,7 @@ public class FarmService {
      * @return uma lista com o dto das fazendas que foram encontradas no banco de dados.
      */
     public List<FarmDTO> findAllFarms() {
-        return repository.findAll().stream().map(FarmDTO::new).collect(Collectors.toList());
+        return repository.findAll().stream().map(FarmDTO::new).collect(toList());
     }
 
     /**
@@ -84,7 +83,7 @@ public class FarmService {
      * @return uma lista com o dto das fazendas que foram encontradas no banco de dados através do ID da empresa.
      */
     public List<FarmDTO> findAllFarmsByCompanyId(Long companyId) {
-        return repository.findAllByCompanyId(companyId).stream().map(FarmDTO::new).collect(Collectors.toList());
+        return repository.findAllByCompanyId(companyId).stream().map(FarmDTO::new).collect(toList());
     }
 
     /**
@@ -98,13 +97,51 @@ public class FarmService {
     }
 
     /**
-     * Busca todos os grãos de uma determinada empresa e que estão associados a uma fazenda para buscar a quantidade de estoque de cada grão.
+     * Busca o estoque de grãos de uma fazenda com base no ID da empresa
      *
      * @param companyId
-     * @return um dto com os grãos e quantidade em estoque de cada um.
+     * @return o estoque de grãos de uma fazenda
      */
     public List<GrainStockByCompanyDTO> findAllGrainsInStockByCompanyId(Long companyId) {
-        return repository.findAllGrainsInStockByCompanyId(companyId).stream().map(GrainStockByCompanyDTO::new).collect(Collectors.toList());
+
+        List<FarmEntity> farmsGrainByCompany = repository.findAllGrainsInStockByCompanyId(companyId);
+
+        return calculateFarmGrainStock(farmsGrainByCompany);
+    }
+
+    /**
+     * Soma o estoque da fazenda de uma empresa quando esta empresa possui mais de uma fazenda produzindo o mesmo grão, se não apenas informa a quantidade em estoque.
+     *
+     * @param farmsGrainByCompany
+     * @return uma coleção DTO com o nome do grão e sua quantidade em estoque nas fazendas da empresa
+     */
+    private List<GrainStockByCompanyDTO> calculateFarmGrainStock(List<FarmEntity> farmsGrainByCompany) {
+
+        Map<String, Double> grainInStock = new LinkedHashMap<>();
+
+        double quantityStock = 0.0;
+
+        for (FarmEntity farm : farmsGrainByCompany) {
+            quantityStock = farm.getInitialInventoryKg();
+            for (FarmEntity farmAux : farmsGrainByCompany) {
+
+                if (Objects.equals(farm.getGrainProduced().getId(), farmAux.getGrainProduced().getId())
+                        && !Objects.equals(farm.getId(), farmAux.getId())) {
+                    quantityStock += farmAux.getInitialInventoryKg();
+                }
+
+            }
+
+            grainInStock.put(farm.getGrainProduced().getName(), quantityStock);
+
+        }
+
+        // Converte para uma lista Map.Entry e ordena pela quantidade de estoque de forma ascendente
+        List<Map.Entry<String, Double>> list = new ArrayList<>(grainInStock.entrySet());
+        list.sort(Map.Entry.comparingByValue());
+
+        return list.stream().map(grain -> new GrainStockByCompanyDTO(grain.getKey(), grain.getValue())).toList();
+
     }
 
     /**
@@ -120,9 +157,9 @@ public class FarmService {
 
         addressService.createOrUpdateAddress(entity.getAddress()).ifPresent(entity::setAddress);
         companyService.getCompanyIfAlreadyExists(entity.getCompany()).ifPresent(entity::setCompany);
-        grainService.createOrUpdateGrain(entity.getGrainProduced()).ifPresent(entity::setGrainProduced);
+        grainService.getGrainIfAlreadyExists(entity.getGrainProduced()).ifPresent(entity::setGrainProduced);
 
-        if (farmAlreadyExist(entity.getName(), entity.getAddress().getId(), entity.getCompany().getId())) {
+        if (farmAlreadyExist(entity)) {
             throw new EntityAlreadyExistsException("The entered farm already exists.");
         }
 
@@ -152,13 +189,11 @@ public class FarmService {
 
         addressService.createOrUpdateAddress(newFarm.getAddress()).ifPresent(newFarm::setAddress);
         companyService.getCompanyIfAlreadyExists(newFarm.getCompany()).ifPresent(newFarm::setCompany);
-        grainService.createOrUpdateGrain(newFarm.getGrainProduced()).ifPresent(newFarm::setGrainProduced);
+        grainService.getGrainIfAlreadyExists(newFarm.getGrainProduced()).ifPresent(newFarm::setGrainProduced);
 
-        if (!(farm.get().getName().equalsIgnoreCase(newFarm.getName()) &&
-                Objects.equals(farm.get().getAddress().getId(), newFarm.getAddress().getId()) &&
-                Objects.equals(farm.get().getCompany().getId(), newFarm.getCompany().getId()))) {
-            if (farmAlreadyExist(newFarm.getName(), newFarm.getAddress().getId(), newFarm.getCompany().getId())) {
-                throw new EntityAlreadyExistsException("The entered farm already exists.");
+        if (!(farm.get().equals(newFarm))) {
+            if (farmAlreadyExist(newFarm)) {
+                throw new EntityAlreadyExistsException("The entered farm with id " + id + " already exists.");
             }
         }
 
@@ -201,13 +236,11 @@ public class FarmService {
     /**
      * Verifica se a fazenda já existe
      *
-     * @param name
-     * @param addressId
-     * @param companyId
+     * @param newFarm
      * @return uma fazenda caso ela exista
      */
-    public boolean farmAlreadyExist(String name, Long addressId, Long companyId) {
-        return repository.existsByNameAndAddress_IdAndCompany_Id(name, addressId, companyId);
+    public boolean farmAlreadyExist(FarmEntity newFarm) {
+        return repository.existsByNameAndAddress_IdAndCompany_Id(newFarm.getName(), newFarm.getAddress().getId(), newFarm.getCompany().getId());
     }
 
     /**
@@ -223,7 +256,7 @@ public class FarmService {
 
         return farmsCompany.stream().map(
                 entity -> new FarmsByCompanyDTO(entity, getExpectedDateNextHarvest(entity))
-        ).collect(Collectors.toList());
+        ).collect(toList());
 
     }
 
@@ -259,11 +292,7 @@ public class FarmService {
             throw new EntityNullException("The farm cannot be empty or null.");
         }
 
-        try {
-            consistQuantityKg(farm, quantityKgHarvested);
-        } catch (Exception e) {
-            e.getStackTrace();
-        }
+        consistQuantityKg(farm, quantityKgHarvested);
 
         Double currentQuantityStock = farm.getInitialInventoryKg();
         currentQuantityStock += quantityKgHarvested;
@@ -295,11 +324,7 @@ public class FarmService {
             throw new InsufficientGrainStockException();
         }
 
-        try {
-            consistQuantityKg(farm, quantityKgWithdrawal);
-        } catch (Exception e) {
-            e.getStackTrace();
-        }
+        consistQuantityKg(farm, quantityKgWithdrawal);
 
         Double currentQuantityStock = farm.getInitialInventoryKg();
         currentQuantityStock -= quantityKgWithdrawal;
@@ -316,9 +341,8 @@ public class FarmService {
      *
      * @param farm
      * @param quantityKg
-     * @return true se não houver incosistências
      */
-    private boolean consistQuantityKg(FarmEntity farm, Double quantityKg) {
+    private void consistQuantityKg(FarmEntity farm, Double quantityKg) {
         if (quantityKg == null) {
             throw new EntityNullException("The quantity cannot be empty or null.");
         }
@@ -326,8 +350,6 @@ public class FarmService {
         if (quantityKg <= 0) {
             throw new InvalidQuantityException("The quantity cannot be less than or equal to zero.");
         }
-
-        return true;
 
     }
 
